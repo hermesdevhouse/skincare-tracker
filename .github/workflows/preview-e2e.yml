@@ -1,0 +1,80 @@
+# Playwright + axe against the Workers Builds preview for this PR's head commit.
+# The preview URL is read from the check run / deployment status that the Cloudflare GitHub app
+# reports for the head commit (only that app is trusted; our own checks are ignored).
+# Skips cleanly when Workers Builds reported no build or no URL; fails if the build failed or the
+# reported URL is not a *.workers.dev preview hostname. Previews hold fake data only and are not
+# behind Access, so this job needs no secret, only a read-only token (D25).
+name: preview-e2e
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: e2e-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      checks: read
+      deployments: read
+    timeout-minutes: 25
+    steps:
+      - name: Fork PRs get no preview
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          echo "::error::Workers Builds does not build fork branches, so there is no preview to test."
+          exit 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Find the Workers Builds preview URL
+        id: preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          WORKER_NAME=$(sed -n 's/^[[:space:]]*"name":[[:space:]]*"\([^"]*\)".*/\1/p' wrangler.jsonc | head -1) \
+            python3 tools/find_preview_url.py
+      - if: steps.preview.outputs.status == 'found'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - if: steps.preview.outputs.status == 'found'
+        run: npm ci
+      - name: Wait until the preview serves this commit
+        if: steps.preview.outputs.status == 'found'
+        env:
+          URL: ${{ steps.preview.outputs.url }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          case "$URL" in https://*.workers.dev) ;; *) echo "::error::bad preview URL"; exit 1;; esac
+          echo "PREVIEW_URL=$URL" >> "$GITHUB_ENV"
+          for i in $(seq 1 60); do
+            got=$(curl -fsS --max-time 10 "$URL/api/health" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("commit",""))' 2>/dev/null || true)
+            [ "$got" = "$SHA" ] && { echo "Preview is serving $SHA"; exit 0; }
+            sleep 10
+          done
+          echo "::error::Preview at $URL did not serve commit $SHA within 10 minutes"
+          exit 1
+      - if: steps.preview.outputs.status == 'found'
+        run: npx playwright install --with-deps chromium
+      - if: steps.preview.outputs.status == 'found'
+        run: npm run test:e2e
+      - if: always() && steps.preview.outputs.status == 'found'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-evidence
+          path: |
+            reports/e2e-junit.xml
+            reports/e2e.json
+            reports/axe.json
+          if-no-files-found: ignore
+          retention-days: 30

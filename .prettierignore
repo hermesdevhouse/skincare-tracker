@@ -1,0 +1,7 @@
+dist/
+coverage/
+reports/
+test-results/
+playwright-report/
+.wrangler/
+package-lock.json

@@ -1,0 +1,189 @@
+# Runs agent-authored code: no secrets, read-only token, no pull_request_target. (Charter, D25)
+name: ci
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: mkdir -p reports && npm run typecheck 2>&1 | tee reports/typecheck.log
+        shell: bash -o pipefail {0}
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: typecheck-log
+          path: reports/typecheck.log
+          retention-days: 30
+
+  lint:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: mkdir -p reports && npm run lint 2>&1 | tee reports/lint.log
+        shell: bash -o pipefail {0}
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: lint-log
+          path: reports/lint.log
+          retention-days: 30
+
+  test:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-junit
+          path: reports/junit.xml
+          retention-days: 30
+
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  card-scan:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Scan tracked files (reports last four digits only)
+        run: python3 tools/card_guard.py --tree
+      - name: Scan commit messages
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ]; then
+            python3 tools/card_guard.py --commits -1 "$HEAD"
+          else
+            python3 tools/card_guard.py --commits "$BASE..$HEAD"
+          fi
+
+  injection-tripwire:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Scan tracked files outside Tests/sanitizer/
+        run: python3 tools/injection_tripwire.py --tree
+      - name: Scan commit messages
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ]; then
+            python3 tools/injection_tripwire.py --commits -1 "$HEAD"
+          else
+            python3 tools/injection_tripwire.py --commits "$BASE..$HEAD"
+          fi
+
+  text-hygiene:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: LF line endings and one final newline
+        run: python3 tools/text_hygiene.py
+
+  spec-diff:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Breaking-change diff of openapi/openapi.json against the base
+        env:
+          # PRs diff against the base branch; pushes diff against the previous tip of the branch.
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          OASDIFF: tufin/oasdiff@sha256:82b1840a77335562bb11ce95f77ad31745a0c6f3a770929333ed1c5ef466e400 # v1.35.0
+        run: |
+          mkdir -p reports base
+          if [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ] \
+            || ! git show "$BASE:openapi/openapi.json" > base/openapi.json 2>/dev/null; then
+            echo "::notice::No base contract to diff against; nothing to compare."
+            exit 0
+          fi
+          run() { docker run --rm --network none -v "$PWD:/w:ro" "$OASDIFF" "$@"; }
+          run changelog /w/base/openapi.json /w/openapi/openapi.json | tee reports/spec-changelog.txt
+          run breaking /w/base/openapi.json /w/openapi/openapi.json --fail-on ERR
+      - if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: spec-diff
+          path: reports/spec-changelog.txt
+          if-no-files-found: ignore
+          retention-days: 30

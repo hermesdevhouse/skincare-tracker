@@ -1,0 +1,4 @@
+#!/bin/sh
+# Install once per clone: git config core.hooksPath .githooks
+root=$(git rev-parse --show-toplevel) || exit 1
+exec python3 "$root/tools/card_guard.py" --staged
