@@ -2,12 +2,12 @@
   // Used only by the db:*:preview scripts: wrangler d1 commands read just the top-level
   // bindings, so the preview database needs its own config. Never add the prod database here.
   "$schema": "../node_modules/wrangler/config-schema.json",
-  "name": "devhouse-template",
+  "name": "skincare-tracker",
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "devhouse-template-preview",
-      "database_id": "996c8f68-82e1-4d06-99e0-1711b997d598",
+      "database_name": "skincare-tracker-preview",
+      "database_id": "f82718a5-0cf1-4256-958f-ba1c46c9336d",
       "migrations_dir": "../migrations",
     },
   ],
