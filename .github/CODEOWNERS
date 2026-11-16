@@ -1,2 +1,6 @@
 # Chanel owns everything; CODEOWNERS review is required by the main ruleset (D26).
 * @hermesdevhouse
+# Explicit, so a later, more specific rule can never drop them (A14): local hooks and git attributes
+# decide what runs on a commit and how files are normalised.
+/.githooks/** @hermesdevhouse
+/.gitattributes @hermesdevhouse
