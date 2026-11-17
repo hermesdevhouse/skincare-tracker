@@ -19,7 +19,7 @@
     "db:migrate:prod": "wrangler d1 migrations apply skincare-tracker-prod --remote"
   },
   "dependencies": {
-    "hono": "4.13.16",
+    "hono": "4.13.17",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
