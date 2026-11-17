@@ -1,0 +1,27 @@
+/*
+ * Minimal layout only. The pilot has no UX/DTCG token artifact and adding a dependency needs
+ * Chanel's approval (D21), so this file sets no colours, type or spacing tokens: text and focus
+ * use the browser defaults, which already meet WCAG 2.2 SC 1.4.3 and 2.4.7. The only sizes here
+ * are accessibility floors from WCAG 2.2 SC 2.5.8 (Target Size, Minimum), not design values.
+ */
+.field {
+  margin-block-end: 1rem;
+}
+
+.field > label, .field > legend {
+  display: block;
+}
+
+input, select, button {
+  min-height: 24px;
+  min-width: 24px;
+}
+
+.session-option {
+  display: inline-block;
+  margin-inline-end: 1rem;
+}
+
+.field-error {
+  display: block;
+}

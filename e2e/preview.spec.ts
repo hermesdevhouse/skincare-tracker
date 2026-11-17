@@ -8,10 +8,14 @@ test('health endpoint answers', async ({ request }) => {
   expect(await res.json()).toMatchObject({ status: 'ok' });
 });
 
-test('home page renders and has no WCAG 2.2 A/AA violations', async ({ page }) => {
+test('routine screen renders with no axe violations', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  await expect(page.getByRole('status')).toHaveText('API: ok');
+  await expect(page.getByLabel('Name')).toBeVisible();
+  await expect(page.getByLabel('Brand')).toBeVisible();
+  await expect(page.getByLabel('Step')).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Session' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add product to routine' })).toBeVisible();
 
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
