@@ -18,7 +18,7 @@ function jsonResponse(body: unknown, status = 200): Response {
 function product(id: number, step: Product['step'], session: Product['session']): Product {
   return {
     id,
-    name: `Product ${id}`,
+    name: `Product ${String(id)}`,
     brand: 'Acme',
     step,
     session,
@@ -66,7 +66,7 @@ describe('createProduct', () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
-        url = String(input);
+        url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
         options = init;
         return Promise.resolve(jsonResponse(created, 201));
       }),

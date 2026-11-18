@@ -17,7 +17,10 @@ function jsonResponse(body: unknown, status = 200): Response {
 
 function stubFetch(handler: (call: FetchCall) => Promise<Response>) {
   const mock = vi.fn((input: RequestInfo | URL, init?: RequestInit) =>
-    handler({ url: String(input), init }),
+    handler({
+      url: typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+      init,
+    }),
   );
   vi.stubGlobal('fetch', mock);
   return mock;
@@ -95,7 +98,7 @@ it('adds the product without reloading after a successful submit', async () => {
   let postBody: unknown;
   stubFetch(({ init }) => {
     if (init?.method === 'POST') {
-      postBody = JSON.parse(String(init.body));
+      postBody = typeof init.body === 'string' ? JSON.parse(init.body) : undefined;
       return Promise.resolve(jsonResponse(created, 201));
     }
     return Promise.resolve(jsonResponse({ items: [] }));
@@ -131,7 +134,7 @@ it('shows an error and keeps the entered values when the save fails', async () =
   fireEvent.click(screen.getByRole('button', { name: 'Add product to routine' }));
   const alert = await screen.findByRole('alert');
   expect(alert.textContent).toContain('could not be saved');
-  expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Gentle Cleanser');
+  expect(screen.getByLabelText<HTMLInputElement>('Name').value).toBe('Gentle Cleanser');
 });
 
 it('shows the server field error when the API rejects the input', async () => {

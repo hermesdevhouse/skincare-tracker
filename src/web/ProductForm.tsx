@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type FormEvent } from 'react';
+import { useState, type ChangeEvent, type SyntheticEvent } from 'react';
 import {
   SESSION_LABELS,
   SESSIONS,
@@ -24,8 +24,8 @@ const NAME_REQUIRED = 'Name is required.';
 const BRAND_REQUIRED = 'Brand is required.';
 const STEP_REQUIRED = 'Step is required.';
 const SESSION_REQUIRED = 'Session is required.';
-const NAME_TOO_LONG = `Name must be at most ${MAX_TEXT_LENGTH} characters.`;
-const BRAND_TOO_LONG = `Brand must be at most ${MAX_TEXT_LENGTH} characters.`;
+const NAME_TOO_LONG = `Name must be at most ${String(MAX_TEXT_LENGTH)} characters.`;
+const BRAND_TOO_LONG = `Brand must be at most ${String(MAX_TEXT_LENGTH)} characters.`;
 
 export function ProductForm({ onSubmit }: ProductFormProps) {
   const [name, setName] = useState('');
@@ -59,7 +59,7 @@ export function ProductForm({ onSubmit }: ProductFormProps) {
     }
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
+  const handleSubmit = (event: SyntheticEvent<HTMLFormElement>): void => {
     event.preventDefault();
     if (submitting) return;
     setFormError('');

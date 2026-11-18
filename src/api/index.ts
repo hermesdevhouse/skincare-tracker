@@ -103,7 +103,10 @@ function validateText(
     return undefined;
   }
   if (trimmed.length > MAX_TEXT_LENGTH) {
-    errors.push({ field, message: `${field} must be at most ${MAX_TEXT_LENGTH} characters.` });
+    errors.push({
+      field,
+      message: `${field} must be at most ${String(MAX_TEXT_LENGTH)} characters.`,
+    });
     return undefined;
   }
   return trimmed;
@@ -195,7 +198,7 @@ app.post('/products', async (c) => {
     return c.json<Problem>(
       {
         error: 'payload_too_large',
-        message: `Request body must not exceed ${MAX_BODY_BYTES} bytes.`,
+        message: `Request body must not exceed ${String(MAX_BODY_BYTES)} bytes.`,
       },
       413,
     );
@@ -206,7 +209,7 @@ app.post('/products', async (c) => {
     return c.json<Problem>(
       {
         error: 'payload_too_large',
-        message: `Request body must not exceed ${MAX_BODY_BYTES} bytes.`,
+        message: `Request body must not exceed ${String(MAX_BODY_BYTES)} bytes.`,
       },
       413,
     );
