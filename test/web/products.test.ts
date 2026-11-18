@@ -45,13 +45,19 @@ describe('compareProducts', () => {
 describe('fetchProducts', () => {
   it('returns the routine items', async () => {
     const items = [product(1, 'cleanser', 'am')];
-    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(jsonResponse({ items }))));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(jsonResponse({ items }))),
+    );
     await expect(fetchProducts()).resolves.toEqual(items);
   });
 
   it('throws a ProductApiError carrying the status on failure', async () => {
     const body = { error: 'internal_error', message: 'nope' };
-    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(jsonResponse(body, 500))));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(jsonResponse(body, 500))),
+    );
     const error: unknown = await fetchProducts().catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(ProductApiError);
     expect((error as ProductApiError).status).toBe(500);
@@ -84,7 +90,10 @@ describe('createProduct', () => {
       message: 'The request body is invalid.',
       details: [{ field: 'brand', message: 'brand is required.' }],
     };
-    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(jsonResponse(body, 400))));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(jsonResponse(body, 400))),
+    );
     const input: ProductInput = { name: 'P', brand: 'B', step: 'cleanser', session: 'am' };
     const error: unknown = await createProduct(input).catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(ProductApiError);

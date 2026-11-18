@@ -55,7 +55,9 @@ export function App() {
     <main className="app">
       <h1>My routine</h1>
       <ProductForm onSubmit={handleSubmit} />
-      <p className="app-status" role="status">{statusMessage}</p>
+      <p className="app-status" role="status">
+        {statusMessage}
+      </p>
       {loadState === 'loading' ? <p className="loading">Loading routine…</p> : null}
       {loadState === 'error' ? (
         <p className="error" role="alert">

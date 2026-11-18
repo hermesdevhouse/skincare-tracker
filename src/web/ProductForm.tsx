@@ -10,9 +10,7 @@ import {
   type Step,
 } from './products';
 
-export type SubmitResult =
-  | { ok: true }
-  | { ok: false; fieldErrors: FieldError[]; message: string };
+export type SubmitResult = { ok: true } | { ok: false; fieldErrors: FieldError[]; message: string };
 
 export interface ProductFormProps {
   onSubmit: (input: ProductInput) => Promise<SubmitResult>;
@@ -97,7 +95,9 @@ export function ProductForm({ onSubmit }: ProductFormProps) {
 
   return (
     <form className="product-form" onSubmit={handleSubmit} noValidate>
-      <p className="form-error" role="alert">{formError}</p>
+      <p className="form-error" role="alert">
+        {formError}
+      </p>
       <p className="field">
         <label htmlFor="product-name">Name</label>
         <input
@@ -112,7 +112,9 @@ export function ProductForm({ onSubmit }: ProductFormProps) {
             setName(event.target.value);
           }}
         />
-        <span className="field-error" id="name-error">{nameError?.message ?? ''}</span>
+        <span className="field-error" id="name-error">
+          {nameError?.message ?? ''}
+        </span>
       </p>
       <p className="field">
         <label htmlFor="product-brand">Brand</label>
@@ -128,7 +130,9 @@ export function ProductForm({ onSubmit }: ProductFormProps) {
             setBrand(event.target.value);
           }}
         />
-        <span className="field-error" id="brand-error">{brandError?.message ?? ''}</span>
+        <span className="field-error" id="brand-error">
+          {brandError?.message ?? ''}
+        </span>
       </p>
       <p className="field">
         <label htmlFor="product-step">Step</label>
@@ -145,10 +149,14 @@ export function ProductForm({ onSubmit }: ProductFormProps) {
         >
           <option value="">Select a step</option>
           {STEPS.map((value) => (
-            <option key={value} value={value}>{STEP_LABELS[value]}</option>
+            <option key={value} value={value}>
+              {STEP_LABELS[value]}
+            </option>
           ))}
         </select>
-        <span className="field-error" id="step-error">{stepError?.message ?? ''}</span>
+        <span className="field-error" id="step-error">
+          {stepError?.message ?? ''}
+        </span>
       </p>
       <fieldset
         className="field session-field"
@@ -170,7 +178,9 @@ export function ProductForm({ onSubmit }: ProductFormProps) {
             <label htmlFor={`product-session-${value}`}>{SESSION_LABELS[value]}</label>
           </span>
         ))}
-        <span className="field-error" id="session-error">{sessionError?.message ?? ''}</span>
+        <span className="field-error" id="session-error">
+          {sessionError?.message ?? ''}
+        </span>
       </fieldset>
       <button type="submit" disabled={submitting}>
         {submitting ? 'Adding…' : 'Add product to routine'}

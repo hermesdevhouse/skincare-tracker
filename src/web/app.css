@@ -8,11 +8,14 @@
   margin-block-end: 1rem;
 }
 
-.field > label, .field > legend {
+.field > label,
+.field > legend {
   display: block;
 }
 
-input, select, button {
+input,
+select,
+button {
   min-height: 24px;
   min-width: 24px;
 }

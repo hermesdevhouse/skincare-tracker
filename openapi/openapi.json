@@ -104,8 +104,18 @@
         "additionalProperties": false,
         "required": ["name", "brand", "step", "session"],
         "properties": {
-          "name": { "type": "string", "minLength": 1, "maxLength": 80, "description": "Trimmed; a value of only whitespace is rejected as empty." },
-          "brand": { "type": "string", "minLength": 1, "maxLength": 80, "description": "Trimmed; a value of only whitespace is rejected as empty." },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "Trimmed; a value of only whitespace is rejected as empty."
+          },
+          "brand": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "Trimmed; a value of only whitespace is rejected as empty."
+          },
           "step": { "type": "string", "enum": ["cleanser", "serum", "moisturiser", "spf"] },
           "session": { "type": "string", "enum": ["am", "pm"] }
         }
@@ -115,8 +125,14 @@
         "additionalProperties": false,
         "required": ["error", "message"],
         "properties": {
-          "error": { "type": "string", "description": "Machine-readable error code: validation_error, payload_too_large or unsupported_media_type." },
-          "message": { "type": "string", "description": "Human-readable, safe summary. Never echoes internals or a stack trace." },
+          "error": {
+            "type": "string",
+            "description": "Machine-readable error code: validation_error, payload_too_large or unsupported_media_type."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable, safe summary. Never echoes internals or a stack trace."
+          },
           "details": {
             "type": "array",
             "description": "Per-field validation detail (present for a 400 validation error).",
