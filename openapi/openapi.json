@@ -1,6 +1,10 @@
 {
   "openapi": "3.1.0",
-  "info": { "title": "devhouse-template API", "version": "0.1.0" },
+  "info": {
+    "title": "skincare-tracker API",
+    "version": "0.2.0",
+    "description": "OpenAPI 3.1 contract for the skincare-tracker API. The Architect owns it (O1, contract-first); CI's spec-diff job checks it and the implementation against it. REQ-001 adds the two routine endpoints."
+  },
   "paths": {
     "/api/health": {
       "get": {
@@ -22,6 +26,151 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "operationId": "listProducts",
+        "summary": "List the products in the routine (REQ-001)",
+        "description": "Returns every product in the routine. Ordering is fixed by the contract: by session (am before pm), then by step in the sequence cleanser, serum, moisturiser, spf, then by createdAt, then by id, ascending. The client renders AM and PM as separate lists and relies on this order.",
+        "responses": {
+          "200": {
+            "description": "The routine's products, already ordered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["items"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Product" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProduct",
+        "summary": "Add a product to the routine (REQ-001)",
+        "description": "Validates the body server-side (the client validates too) and stores one product. On success returns the stored product so the client can update the list without a page reload.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Product created and stored",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Product" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "413": { "$ref": "#/components/responses/PayloadTooLarge" },
+          "415": { "$ref": "#/components/responses/UnsupportedMediaType" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Product": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "brand", "step", "session", "createdAt"],
+        "properties": {
+          "id": { "type": "integer", "description": "D1 rowid of the product" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "brand": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "step": { "type": "string", "enum": ["cleanser", "serum", "moisturiser", "spf"] },
+          "session": { "type": "string", "enum": ["am", "pm"] },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "brand", "step", "session"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "Trimmed; a value of only whitespace is rejected as empty."
+          },
+          "brand": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80,
+            "description": "Trimmed; a value of only whitespace is rejected as empty."
+          },
+          "step": { "type": "string", "enum": ["cleanser", "serum", "moisturiser", "spf"] },
+          "session": { "type": "string", "enum": ["am", "pm"] }
+        }
+      },
+      "Problem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["error", "message"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Machine-readable error code: validation_error, payload_too_large or unsupported_media_type."
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable, safe summary. Never echoes internals or a stack trace."
+          },
+          "details": {
+            "type": "array",
+            "description": "Per-field validation detail (present for a 400 validation error).",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["field", "message"],
+              "properties": {
+                "field": { "type": "string", "enum": ["name", "brand", "step", "session"] },
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Validation failed; nothing was stored.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Problem" }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "Body exceeds the payload cap; nothing was stored.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Problem" }
+          }
+        }
+      },
+      "UnsupportedMediaType": {
+        "description": "Body is not application/json.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Problem" }
           }
         }
       }
